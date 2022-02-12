@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_crypto/src/models/currency_model.dart';
 import 'package:intl/intl.dart';
 import 'package:cryptocoins_icons/cryptocoins_icons.dart';
 
+import 'currencies.dart';
+
+const boldStyle = TextStyle(fontWeight: FontWeight.bold);
+
 class HomePage extends StatefulWidget {
-  final List currencies;
+  final Currencies currencies;
+  // ignore: use_key_in_widget_constructors
   const HomePage(this.currencies);
 
   @override
@@ -26,40 +32,35 @@ class _HomePageState extends State<HomePage> {
       children: [
         Flexible(
             child: ListView.builder(
-                itemCount: widget.currencies.length,
+                itemCount: widget.currencies.data.length,
                 itemBuilder: (BuildContext context, int index) {
-                  final Map currency = widget.currencies[index];
+                  final Currency currency = widget.currencies.data[index];
                   final MaterialColor color = _colors[index % _colors.length];
 
-                  return _getListItemUi(currency, color);
+                  return _getListItemUi(
+                      currency, color, widget.currencies.currency);
                 })),
       ],
     );
   }
 
-  ListTile _getListItemUi(Map currency, MaterialColor color) {
+  ListTile _getListItemUi(
+      Currency currency, MaterialColor color, String curSymbol) {
     return ListTile(
-        leading: _getCryptoIcon(currency['symbol'], color),
-        title: Text(currency['name'],
-            style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: _getSubTitleText(currency['quote']['AUD']['price'].toString(),
-            currency['quote']['AUD']['percent_change_24h'].toString()),
+        leading: displayIcon(currency.icon, currency.symbol, color),
+        title: Text(currency.name, style: boldStyle),
+        subtitle: _getSubTitleText(
+            currency.price.toString(), currency.percent_change_24h.toString()),
         isThreeLine: true,
-        trailing: Text(currency['symbol']),
+        trailing: Text(currency.symbol),
         minLeadingWidth: 50);
   }
 
-  Widget _getCryptoIcon(String symbol, MaterialColor color) {
-    // ignore: unused_local_variable
-    var iconData = CryptoCoinIcons.getCryptoIcon(symbol);
-    var cryptoIcon = Icon(
-      iconData,
-      size: 20.0,
-    );
+  Widget displayIcon(Icon? icon, String symbol, MaterialColor color) {
     return CircleAvatar(
-        // backgroundColor: color,
-        child: (iconData != null ? cryptoIcon : Text(symbol[0])));
-    // return CircleAvatar(backgroundColor: color, child: Text(symbol[0]));
+        backgroundColor: icon == null ? color : null,
+        foregroundColor: icon == null ? Colors.black : null,
+        child: (icon ?? Text(symbol[0], style: boldStyle)));
   }
 
   Widget _getSubTitleText(String price, String pcntChange) {

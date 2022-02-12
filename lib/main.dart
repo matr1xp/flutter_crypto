@@ -1,46 +1,29 @@
-// ignore_for_file: import_of_legacy_library_into_null_safe
-
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_crypto/home_page.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart' as dotenv;
-import 'package:http/http.dart' as http;
+
+import 'currencies.dart';
 
 void main() async {
-  await dotenv.load(fileName: ".env");
-  List currencies = await getCurrencies();
-  runApp(MyApp(currencies));
+  var currencies = Currencies('AUD');
+  await currencies.init();
+  runApp(CryptoApp(currencies));
 }
 
-class MyApp extends StatefulWidget {
-  final List _currencies;
-  const MyApp(this._currencies);
+class CryptoApp extends StatefulWidget {
+  final Currencies currencies;
+  // ignore: use_key_in_widget_constructors
+  const CryptoApp(this.currencies);
 
   @override
-  _MyAppState createState() => _MyAppState();
+  _CryptoAppState createState() => _CryptoAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _CryptoAppState extends State<CryptoApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
         debugShowCheckedModeBanner: false,
         theme: ThemeData(primarySwatch: Colors.teal),
-        home: HomePage(widget._currencies));
+        home: HomePage(widget.currencies));
   }
-}
-
-Future<List> getCurrencies() async {
-  var queryParameters = {'start': '1', 'limit': '500', 'convert': 'AUD'};
-  String cryptoUrl = "pro-api.coinmarketcap.com";
-  var uri = Uri.https(
-      cryptoUrl, "/v1/cryptocurrency/listings/latest", queryParameters);
-  http.Response response = await http.get(uri, headers: {
-    HttpHeaders.acceptHeader: "application/json",
-    "X-CMC_PRO_API_KEY": dotenv.env['COINMARKETCAP_API_KEY']!
-  });
-  Map responseObject = json.decode(response.body);
-  return responseObject['data'];
 }

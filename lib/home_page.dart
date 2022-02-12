@@ -1,7 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_crypto/src/models/currency_model.dart';
 import 'package:intl/intl.dart';
-import 'package:cryptocoins_icons/cryptocoins_icons.dart';
 
 import 'currencies.dart';
 
@@ -18,30 +19,51 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final List<MaterialColor> _colors = [Colors.blue, Colors.indigo, Colors.pink];
+  late Future<List<dynamic>> futureCurrencies;
+  final String defaultLocale = Platform.localeName;
+
+  @override
+  void initState() {
+    super.initState();
+    futureCurrencies = widget.currencies.list(1, 100, 'AUD');
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(actions: const [], title: const Text("Crypto App")),
-      body: _cryptoWidget(),
-    );
+    return FutureBuilder<List>(
+        future: futureCurrencies,
+        builder: (context, snapshot) {
+          return RefreshIndicator(
+              displacement: 120,
+              child: Scaffold(
+                  appBar: AppBar(
+                      actions: const [], title: const Text("Crypto App")),
+                  body: _cryptoWidget(snapshot)),
+              onRefresh: _pullRefresh);
+        });
   }
 
-  Widget _cryptoWidget() {
-    return Column(
-      children: [
-        Flexible(
-            child: ListView.builder(
-                itemCount: widget.currencies.data.length,
-                itemBuilder: (BuildContext context, int index) {
-                  final Currency currency = widget.currencies.data[index];
-                  final MaterialColor color = _colors[index % _colors.length];
+  Future<void> _pullRefresh() async {
+    await Future.delayed(const Duration(seconds: 2));
+    List<dynamic> freshFutureCurrencies =
+        await widget.currencies.list(1, 100, 'AUD');
+    setState(() {
+      futureCurrencies = Future.value(freshFutureCurrencies);
+    });
+  }
 
-                  return _getListItemUi(
-                      currency, color, widget.currencies.currency);
-                })),
-      ],
-    );
+  Widget _cryptoWidget(AsyncSnapshot snapshot) {
+    if (snapshot.hasData) {
+      return ListView.builder(
+          itemCount: snapshot.data.length,
+          itemBuilder: (context, index) {
+            Currency currency = snapshot.data[index];
+            MaterialColor color = _colors[index % _colors.length];
+            return _getListItemUi(currency, color, widget.currencies.currency);
+          });
+    } else {
+      return const Center(child: Text('Loading data...'));
+    }
   }
 
   ListTile _getListItemUi(
@@ -49,8 +71,7 @@ class _HomePageState extends State<HomePage> {
     return ListTile(
         leading: displayIcon(currency.icon, currency.symbol, color),
         title: Text(currency.name, style: boldStyle),
-        subtitle: _getSubTitleText(
-            currency.price.toString(), currency.percent_change_24h.toString()),
+        subtitle: _getListBody(currency),
         isThreeLine: true,
         trailing: Text(currency.symbol),
         minLeadingWidth: 50);
@@ -63,14 +84,14 @@ class _HomePageState extends State<HomePage> {
         child: (icon ?? Text(symbol[0], style: boldStyle)));
   }
 
-  Widget _getSubTitleText(String price, String pcntChange) {
-    var oCcy = NumberFormat("#,##0.00", "en_AU");
+  Widget _getListBody(Currency currency) {
+    String price = currency.price.toString();
+    String pcntChange = currency.percent_change_24h.toString();
+    var numFormat = NumberFormat.currency(locale: defaultLocale, symbol: "\$");
     if (double.parse(price) < 1.00) {
-      oCcy = NumberFormat("#,##0.000000", "en_AU");
-    } else {
-      oCcy = NumberFormat("#,##0.00", "en_AU");
+      numFormat = NumberFormat("#,##0.000000", defaultLocale);
     }
-    String priceFormatted = "\$${oCcy.format(double.parse(price))}\n";
+    String priceFormatted = "${numFormat.format(double.parse(price))}\n";
     TextSpan priceTextWidget = TextSpan(
         text: priceFormatted,
         style: const TextStyle(
@@ -91,7 +112,13 @@ class _HomePageState extends State<HomePage> {
               const TextStyle(color: Colors.red, fontWeight: FontWeight.bold));
     }
 
-    return RichText(
-        text: TextSpan(children: [priceTextWidget, pcntChangeTextWidget]));
+    return Row(children: [
+      Expanded(
+          child: RichText(
+              text:
+                  TextSpan(children: [priceTextWidget, pcntChangeTextWidget]))),
+      const Expanded(child: Text('') //Create Line graph widget,
+          )
+    ]);
   }
 }

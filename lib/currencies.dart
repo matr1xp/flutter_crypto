@@ -15,12 +15,12 @@ class Currencies {
 
   Currencies([String? currency]) {
     this.currency = currency!;
+    init();
   }
 
   Future<void> init() async {
     await dotenv.load(fileName: ".env");
     apiKey = dotenv.env['COINMARKETCAP_API_KEY']!;
-    data = await list(1, 100, currency);
   }
 
   Future<List> list(int start, int limit, String _currency) async {
@@ -35,13 +35,14 @@ class Currencies {
       "X-CMC_PRO_API_KEY": apiKey
     });
     Map responseObject = json.decode(response.body);
-    var _data = responseObject['data'];
-    _data.forEach((element) {
-      var test = Currency.fromJson(element);
-      data.add(test);
-    });
-
-    currency = _currency;
+    if (responseObject['status']['error_code'] == 0) {
+      data.clear();
+      responseObject['data'].forEach((element) {
+        var test = Currency.fromJson(element);
+        data.add(test);
+      });
+      currency = _currency;
+    }
     return data;
   }
 }

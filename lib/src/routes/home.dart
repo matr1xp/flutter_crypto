@@ -2,16 +2,20 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_crypto/src/models/currency_model.dart';
+import 'package:flutter_crypto/src/models/settings_model.dart';
+import 'package:flutter_crypto/src/routes/settings.dart';
 import 'package:intl/intl.dart';
+import 'package:sqflite/sqflite.dart';
 
-import 'currencies.dart';
+import '../currencies.dart';
 
 const boldStyle = TextStyle(fontWeight: FontWeight.bold);
 
 class HomePage extends StatefulWidget {
+  final Database database;
   final Currencies currencies;
   // ignore: use_key_in_widget_constructors
-  const HomePage(this.currencies);
+  const HomePage(this.database, this.currencies);
 
   @override
   _HomePageState createState() => _HomePageState();
@@ -36,8 +40,12 @@ class _HomePageState extends State<HomePage> {
           return RefreshIndicator(
               displacement: 120,
               child: Scaffold(
-                  appBar: AppBar(
-                      actions: const [], title: const Text("Crypto App")),
+                  appBar: AppBar(actions: <Widget>[
+                    IconButton(
+                      onPressed: settingsPressed,
+                      icon: const Icon(Icons.settings),
+                    )
+                  ], title: const Text("Crypto App")),
                   body: _cryptoWidget(snapshot)),
               onRefresh: _pullRefresh);
         });
@@ -120,5 +128,20 @@ class _HomePageState extends State<HomePage> {
       const Expanded(child: Text('') //Create Line graph widget,
           )
     ]);
+  }
+
+  void settingsPressed() {
+    getSettings().then((settings) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => SettingsPage(
+                widget.database, settings, widget.currencies.currency)),
+      );
+    });
+  }
+
+  Future<List<Settings>> getSettings() async {
+    return await Settings().getAll(widget.database);
   }
 }

@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_crypto/src/models/settings_model.dart';
 import 'package:path/path.dart';

@@ -105,7 +105,7 @@ class _HomePageState extends State<HomePage> {
         style: const TextStyle(
             color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16.0));
     String pcntFormatted =
-        "24H: " + (double.parse(pcntChange)).toStringAsFixed(2);
+        "24H: " + (double.parse(pcntChange)).toStringAsFixed(2) + "%";
     TextSpan pcntChangeTextWidget;
 
     if (double.parse(pcntChange) > 0) {
